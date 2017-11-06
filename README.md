@@ -5,14 +5,20 @@ This script requires both the pySecurityCenter project at https://github.com/Ste
 
 # Using With Security Center On Unix/Linux/BSD
 To instruct tenablecli to interact with a SecurityCenter installation, set the following environment variables
+
 SCHOST=192.168.1.1; export SCHOST
+
 SCUSERNAME=jamessmith;export SCUSERNAME
+
 SCPASSWORD=***********;export SCPASSWORD
 
 # Using With Tenable.io On Unix/Linux/BSD
 To instruct tenablecli to interact with Tenable.io, set the following environment variables
+
 TIOHOST=cloud.tenable.com; export TIOHOST
+
 TIOACCESSKEY=jamessmith;export TIOACCESSKEY
+
 TIOSECRETKEY=***********;export TIOSECRETKEY
 
 # Using With Tenable.io On Windows
