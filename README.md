@@ -23,16 +23,21 @@ TIOSECRETKEY=***********;export TIOSECRETKEY
 
 # Using With Tenable.io On Windows
 To instruct tenablecli to interact with Tenable.io, set the following environment variables
+
 set TIOHOST=cloud.tenable.com
+
 set TIOACCESSKEY=jamessmith
+
 set TIOSECRETKEY=***********
 
 # Launching Scans
 The syntax to launch scans differs between SecurityCenter and Tenable.io, since Tenable.io has introduced the concept of folders.
 
+
 To launch a scan in SecurityCenter the syntax is: ./tenablecli.py scan launch scanname
 
 For example: ./tenablecli.py scan launch "Basic network scan of server VLAN"
+
 
 To launch a scan in Tenable.io the syntax is: ./tenablecli.py scan launch foldername scanname
 
