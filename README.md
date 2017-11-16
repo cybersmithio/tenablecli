@@ -42,3 +42,8 @@ For example: ./tenablecli.py scan launch "Basic network scan of server VLAN"
 To launch a scan in Tenable.io the syntax is: ./tenablecli.py scan launch foldername scanname
 
 For example: ./tenablecli.py scan launch "Server Scans" "Basic network scan of server VLAN"
+
+# Downloading a CSV of all agents
+This is currently only available for Tenable.io.  Running this will create an agents.csv file in the current directory.
+
+To launch: ./tenablecli.py agent download csv
