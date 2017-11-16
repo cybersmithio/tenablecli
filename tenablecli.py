@@ -45,6 +45,10 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
+
+#To check scan zones for overlaps
+import netaddr
+import ipaddr
 		
 		
 ################################################################
@@ -69,6 +73,63 @@ def StopAllTioScans(tioconn):
 
 	#Sstop all the scans
 	tioconn.scan_helper.stop_all
+
+	return(True)
+
+################################################################
+# Description: Reports on any overlaps in scan zones
+################################################################
+# Input:
+#        scconn    = The connection handle to SecurityCenter
+#
+################################################################
+# Output:
+#        True = Successfully completed operation
+#        False = Did not successfully complete the operation
+################################################################
+# To do:
+#
+################################################################
+def CheckForScanZoneOverlaps(scconn):
+	DEBUG=False
+	if DEBUG:
+		print "Checking for overlaps in any scan zones"
+		print "This are not necessarily a problem depending on your environment"
+
+
+	resp=scconn.get('zone?fields=name%2Cscanners%2CtotalScanners%2CactiveScanners%2CtotalScanners%2CmodifiedTime%2CcanUse%2CcanManage')
+
+	if DEBUG:
+		print resp
+		print resp.text
+
+	scanzoneranges=[]
+	#Iterate through all the scan zones and download the IP ranges
+	for i in resp.json()['response']:
+		resp=scconn.get('zone/'+str(i['id'])+'?fields=name%2Cdescription%2CipList%2CcreatedTime%2Cranges%2Cscanners%2Cname%2Cscanners%2CtotalScanners%2CactiveScanners%2CtotalScanners%2CmodifiedTime%2CcanUse%2CcanManage')
+		iplist=resp.json()['response']['ipList'].split(',')
+		for j in iplist:
+			if DEBUG:
+				print "IP Range in scan zone",j
+			#Check if the IP address is an IP range (instead of a single IP or CIDR)
+			hyphen=string.find(j,"-")
+			if( hyphen >= 0 ):
+				#If the IP address is a range, convert it to CIDR notation
+				if DEBUG:
+					print "CIDRs",netaddr.iprange_to_cidrs(j[0:hyphen],j[hyphen+1:])
+
+				for k in netaddr.iprange_to_cidrs(j[0:hyphen],j[hyphen+1:]):
+					scanzoneranges.append([k,i])
+			else:
+				scanzoneranges.append([j,i])
+	#Examine all the network ranges for overlaps
+	#Go through all the ranges, comparing each one to all the other ranges, 
+	for i in range(0,len(scanzoneranges)):
+		n1=ipaddr.IPNetwork(scanzoneranges[i][0])
+		for j in range(i+1,len(scanzoneranges)):
+			n2=ipaddr.IPNetwork(scanzoneranges[j][0])
+			if n1.overlaps(n2):
+				print n1,"in scan zone \""+str(scanzoneranges[i][1]['name'])+"\" overlaps with",n2,"in scan zone \""+str(scanzoneranges[j][1]['name'])+"\""
 
 	return(True)
 
@@ -700,7 +761,11 @@ if len(sys.argv) > 2:
 	
 if USESC:
 	#Create a session as the user
-	scconn=SecurityCenter5(schost)
+	try:
+		scconn=SecurityCenter5(schost)
+	except requests.exceptions.ConnectionError:
+		print "Unable to connect to SecurityCenter"
+		exit(-1)
 	scconn.login(username,password)
 	if DEBUG:
 		print "Logged in as "+str(username)+" to SecurityCenter at "+str(schost)
@@ -880,6 +945,15 @@ while True:
 				else:
 					print "Missing arguments"
 				break
+
+	if noun == "scanzone":
+		if USETIO:
+			print "Feature not available for Tenable.io, only SecurityCenter"
+			break
+		if verb == "overlaps":
+			CheckForScanZoneOverlaps(scconn)	
+			exit(0)
+			
 	break
 
 
