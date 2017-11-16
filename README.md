@@ -1,6 +1,9 @@
 # tenablecli
 
 # Overview
+This is a Python script to provide a command line interface with Tenable's SecurityCenter and Tenable.io products.  You can download Python for Unix, Windows, and Mac at https://www.python.org/
+
+
 This script requires both the pySecurityCenter project at https://github.com/SteveMcGrath/pySecurityCenter and the Tenable.io SDK at https://github.com/tenable/Tenable.io-SDK-for-Python/
 
 # Using With Security Center On Unix/Linux/BSD
