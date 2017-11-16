@@ -48,3 +48,9 @@ For example: ./tenablecli.py scan launch "Server Scans" "Basic network scan of s
 This is currently only available for Tenable.io.  Running this will create an agents.csv file in the current directory.
 
 To launch: ./tenablecli.py agent download csv
+
+
+# Report on scan zones that overlap
+This is currently only available for SecurityCenter, as Tenable.io does not use scan zones.  Overlapping scan zones do not necssarily mean there is a problem with the configuration.  Some organizations having overlapping network ranges for various reasons.
+
+To launch: ./tenablecli.py scanzone overlaps
