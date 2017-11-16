@@ -28,6 +28,7 @@ import os
 import re
 import string
 import json
+import csv
 from datetime import datetime,date, time
 import time
 import requests
@@ -114,6 +115,46 @@ def FindTioScansByPolicy(tioconn,policyname):
 			print "Policy name",respdata2['info']['policy']
 		if respdata2['info']['policy'] == policyname:
 			print "Scan \""+respdata2['info']['name']+"\" uses this policy"
+
+	return(True)
+
+		
+################################################################
+# Description: Download a list of agents in CSV format
+################################################################
+# Input:
+#        tioconn    = The connection handle to Tenable.io
+#        filename   = The filename of the CSV file to create
+################################################################
+# Output:
+#        True = Successfully completed operation
+#        False = Did not successfully complete the operation
+################################################################
+# To do:
+#
+################################################################
+def AgentDownloadCSV(tioconn,filename):
+	DEBUG=False
+	if DEBUG:
+		print "Finding all agents and creating CSV",policyname
+
+	#Get a list of all the scans
+	resp=tioconn.get("workbenches/assets")
+	respdata=json.loads(resp.text)
+
+	if DEBUG:
+		print "Response",respdata,"\n\n"
+
+	with open(filename,"w") as csvfile:
+		fieldnames=['id','has_agent','last_seen','operating_system','fqdn','ipv4','ipv6','netbios_name']	
+		writer=csv.DictWriter(csvfile,fieldnames=fieldnames)
+		writer.writeheader()
+		DEBUG=True
+		for i in respdata['assets']:
+			if i['has_agent'] == True:
+				rowdict={'id':i['id'], 'has_agent': i['has_agent'], 'last_seen': i['last_seen'],'operating_system': i['operating_system'], 'fqdn': i['fqdn'], 'ipv4': i['ipv4'], 'ipv6': i['ipv6'], 'netbios_name': i['netbios_name']}
+				writer.writerow(rowdict)
+	csvfile.close()
 
 	return(True)
 
@@ -805,6 +846,24 @@ while True:
 	if noun == "agent":
 		if verb == "move":
 			print "Moving agent"
+			break
+
+
+		if verb == "download":
+			if( len(sys.argv) > 3):
+				fileformat=sys.argv[3]
+				if fileformat == "csv":
+					if USETIO:
+						AgentDownloadCSV(tioconn,"agents.csv")
+						exit(0)
+					if USESC:
+						print "Feature not implemented for SecurityCenter"
+						break
+				else:
+					print "Unknown file format"
+					break
+			else:
+				print "Missing arguments"
 			break
 
 	if noun == "policy":
