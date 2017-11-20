@@ -47,15 +47,15 @@ For example: ./tenablecli.py scan launch "Server Scans" "Basic network scan of s
 # Downloading a CSV of all agents
 This is currently only available for Tenable.io.  Running this will create an agents.csv file in the current directory.
 
-To launch: ./tenablecli.py agent download csv
+To launch: **./tenablecli.py agent download csv**
 
 
 # Report on scan zones that overlap
 This is currently only available for SecurityCenter, as Tenable.io does not use scan zones.  Overlapping scan zones do not necssarily mean there is a problem with the configuration.  Some organizations having overlapping network ranges for various reasons.
 
-To launch: ./tenablecli.py scanzone overlaps
+To launch: **./tenablecli.py scanzone overlaps**
 
 # Launch a quick scan
 This is currently only available for SecurityCenter (just because).  This launches a scan with just one plugin enabled (and possibly some dependencies), and scans just one target.
 
-To launch: ./tenablecli.py scan quick pluginID repositoryID target targetPort
+To launch: **./tenablecli.py scan quick** *pluginID repositoryID target targetPort*
