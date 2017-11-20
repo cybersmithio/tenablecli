@@ -134,6 +134,115 @@ def CheckForScanZoneOverlaps(scconn):
 	return(True)
 
 ################################################################
+# Description: Retrieve plugin information from SecurityCenter
+################################################################
+# Input:
+#        scconn    = The connection handle to SecurityCenter
+#	 pluginid = The plugin ID to run
+#
+################################################################
+# Output:
+#        True = JSON structure with plugin information
+#        False = Did not successfully complete the operation
+################################################################
+# To do:
+#
+################################################################
+def GetSCPluginInformation(scconn,pluginid):
+	DEBUG=False
+	if DEBUG:
+		print "Gathering plugin information about plugin ID",pluginid
+
+	url='plugin?filterField=id&op=eq&value='+str(pluginid)+'&endOffset=50&sortDirection=ASC&sortField=name&fields=name%2Cdescription%2Cfamily%2Ctype%2CmodifiedTime'
+	if DEBUG:
+		print "URL: ",url
+	resp=scconn.get(url)
+
+	if DEBUG:
+		print "Received response"
+		print resp
+		print resp.text
+	respdata=json.loads(resp.text)
+	if respdata['error_code'] == 0:
+		plugininfo=respdata['response']
+		if DEBUG:
+			print "\n\nResponse error code/error message",respdata['error_code'],"/",respdata['error_msg']
+			print "\n\nPlugin Info",plugininfo
+		return(plugininfo[0])
+	return(False)
+
+
+################################################################
+# Description: Launch a scan against one target for one plugin
+################################################################
+# Input:
+#        scconn    = The connection handle to SecurityCenter
+#        scantarget   = The target of the scan
+#	 scanpluginid = The plugin ID to run
+#	 repositoryid = The ID of the repository where the data should be imported
+#
+################################################################
+# Output:
+#        True = Successfully completed operation
+#        False = Did not successfully complete the operation
+################################################################
+# To do:
+#
+################################################################
+def LaunchRemediationScan(scconn,scanpluginid,repositoryid,scantarget,scanport):
+	DEBUG=False
+	if DEBUG:
+		print "Launching remediation scan on",scantarget,"with plugin ID",scanpluginid
+
+	plugininfo=GetSCPluginInformation(scconn,scanpluginid)
+	if plugininfo == False:
+		if DEBUG:
+			print "Problem getting plugin information"
+		return(False)
+	if DEBUG:
+		print "Plugin family info:",plugininfo
+		print "Plugin family ID:",plugininfo['family']['id']
+		print "Plugin family name:",plugininfo['family']['name']
+		print "Plugin family type:",plugininfo['family']['type']
+
+	postdata='{"name":"","description":"","context":"scan","status":-1,"createdTime":0,"modifiedTime":0,"groups":[],"policyTemplate":{"id":1},"auditFiles":[],"preferences":{"portscan_range":"'+str(scanport)+'","tcp_scanner":"no","syn_scanner":"yes","udp_scanner":"no","syn_firewall_detection":"Automatic (normal)"},"families":[{"id":"'+str(plugininfo['family']['id'])+'","name":"'+str(plugininfo['family']['name'])+'","type":"'+str(plugininfo['family']['type'])+'","plugins":[{"id":"'+str(scanpluginid)+'"}]},{"id":"41","plugins":[{"id":"19506"}]}]}'
+	if DEBUG:
+		print "Post data:",postdata
+	resp=scconn.post('policy',data=postdata)
+
+	if DEBUG:
+		print resp
+		print resp.text
+	respdata=json.loads(resp.text)
+	if respdata['error_code'] != 0:
+		if DEBUG:
+			print "Problem creating policy"
+		return(False)
+	policyid=respdata['response']['id']
+	if DEBUG:
+		print "\n\nResponse error code/error message",respdata['error_code'],"/",respdata['error_msg']
+		print "\n\nPolicy ID",policyid
+
+	postdata='{"name":"Quick scan of '+str(scantarget)+' for plugin ID '+str(scanpluginid)+'","description":"","context":"","status":-1,"createdTime":0,"modifiedTime":0,"groups":[],"repository":{"id":"'+str(repositoryid)+'"},"schedule":{"start":"TZID=America/New_York:20171120T160400","repeatRule":"FREQ=NOW;INTERVAL=1","type":"now"},"dhcpTracking":"true","emailOnLaunch":"false","emailOnFinish":"false","reports":[],"type":"policy","policy":{"id":"'+str(policyid)+'"},"pluginID":"'+str(scanpluginid)+'","zone":{"id":-1},"timeoutAction":"rollover","rolloverType":"template","scanningVirtualHosts":"false","classifyMitigatedAge":0,"assets":[],"ipList":"'+str(scantarget)+'","credentials":[],"maxScanTime":"unlimited"}'
+
+	if DEBUG:
+		print "Post data:",postdata
+	resp=scconn.post('scan',data=postdata)
+
+	if DEBUG:
+		print resp
+		print resp.text
+	respdata=json.loads(resp.text)
+	policyid=respdata['response']['id']
+	if DEBUG:
+		print "\n\nResponse error code/error message",respdata['error_code'],"/",respdata['error_msg']
+	if respdata['error_code'] != 0:
+		return(False)
+	
+	return(True)
+
+
+################################################################
 # Description: Find all the scans using a particular policy
 ################################################################
 # Input:
@@ -753,11 +862,15 @@ if USESC & USETIO:
 #Get commands
 if len(sys.argv) > 1:
 	noun=sys.argv[1]
-	print "Noun:",noun
+	if DEBUG:
+		print "Noun:",noun
 	
 if len(sys.argv) > 2:
 	verb=sys.argv[2]
-	print "Verb:",verb
+	if DEBUG:
+		print "Verb:",verb
+else:
+	verb=""
 	
 if USESC:
 	#Create a session as the user
@@ -774,6 +887,23 @@ if USETIO:
 	tioconn = TenableIOClient(access_key=accesskey, secret_key=secretkey)
 	
 while True:
+	if noun == "help":
+		if verb == "":
+			print "Options"
+			print "  scan launch"
+			print "  scan stop"
+			print "  scan stop-all"
+			print "  scan quick [plugin ID] [repository ID] [target] [target port]"
+			print "  scan pci-submit"
+			print "  scan pci-submit when-clean scan-id"
+			print "  pci-asv email-latest-attestation \"somebody@issuer.xyz\" \"securityanalyst@company.xyz\" \"Company Inc\" mailrelay.company.xyz"
+			print "  asset update"
+			print "  agent move"
+			print "  agent download"
+			print "  policy find-scans"
+			print "  scanzone overlaps"
+			print "  "
+			exit(0)
 	if noun == "scan":
 		if verb == "launch":
 			if USESC:
@@ -804,6 +934,25 @@ while True:
 				break
 
 			break
+		if verb == "quick":
+			if len(sys.argv) > 4:
+				scantarget=sys.argv[5]
+				repositoryid=sys.argv[4]
+				scanpluginid=sys.argv[3]
+				scanport=0
+				if len(sys.argv) > 6:
+					scanport=sys.argv[6]
+				if USESC:
+					print "Launching a quick scan of",scantarget,"for plugin ID",scanpluginid
+					if LaunchRemediationScan(scconn,scanpluginid,repositoryid,scantarget,scanport):
+						print "Scan launched"
+					else:
+						print "Problem launching scan"
+					exit(0)
+				if USETIO:
+					print "Feature not yet implemented for Tenable.io"
+			else:
+				print "Missing arguments"
 		if verb == "stop":
 			print "Stopping scan"
 			break
