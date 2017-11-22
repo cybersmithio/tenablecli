@@ -2,7 +2,14 @@
 This is a Python script to provide a command line interface with Tenable's SecurityCenter and Tenable.io products.  You can download Python for Unix, Windows, and Mac at https://www.python.org/
 
 
-This script requires both the pySecurityCenter project at https://github.com/SteveMcGrath/pySecurityCenter and the Tenable.io SDK at https://github.com/tenable/Tenable.io-SDK-for-Python/
+This script requires the following Python libraries:
+*The pySecurityCenter project at https://github.com/SteveMcGrath/pySecurityCenter 
+*The Tenable.io SDK at https://github.com/tenable/Tenable.io-SDK-for-Python/
+*The netaddr library at https://pypi.python.org/pypi/netaddr
+*The ipaddr library at https://pypi.python.org/pypi/ipaddr
+
+The last two libraries can be installed by running: **pip install netaddr ipaddr**
+
 
 # Using With Security Center On Unix/Linux/BSD
 To instruct tenablecli to interact with a SecurityCenter installation, set the following environment variables
