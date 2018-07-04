@@ -4,7 +4,8 @@
 # Tenable SecurityCenter or Tenable.io.
 #
 #
-# Version 1.0
+# Version 1.0 - Initial release
+# Version 1.0.1 - Improved error handling.  Thanks to Julien for testing!
 #
 # Roadmap
 #   
@@ -795,7 +796,21 @@ def LaunchScan(scsm,scan):
 
 	return(False)
 
-		
+def DisplayHelp():
+	print "Options"
+	print "  scan launch"
+	print "  scan stop"
+	print "  scan stop-all"
+	print "  scan quick [plugin ID] [repository ID] [target] [target port]"
+	print "  scan pci-submit"
+	print "  scan pci-submit when-clean scan-id"
+	print "  pci-asv email-latest-attestation \"somebody@issuer.xyz\" \"securityanalyst@company.xyz\" \"Company Inc\" mailrelay.company.xyz"
+	print "  asset update"
+	print "  agent move"
+	print "  agent download"
+	print "  policy find-scans"
+	print "  scanzone overlaps"
+	print "  "
 
 ################################################################
 # Start of program 
@@ -854,19 +869,53 @@ if USETIO:
 	else:
 		secretkey=os.getenv('TIOSECRETKEY')
 
-if USESC & USETIO:
-	print "Unable to determine which system to use"
+if USESC == False and USETIO == False:
+	print "Unable to determine which system to use.  Please provide credentials for either SecurityCenter or Tenable.io."
+	print " "
+	print " For SecurityCenter, set these environment variables and export them:"
+	print "     SCHOST"
+	print "     SCUSERNAME"
+	print "     SCPASSWORD"
+	print " "
+	print " For Tenable.io, set these environment variables and export them:"
+	print "     TIOHOST"
+	print "     TIOACCESSKEY"
+	print "     TIOSECRETKEY"
+	print " "
+	print " SecurityCenter example:"
+	print "     SCHOST=192.168.255.123"
+	print "     SCUSERNAME=secmanager"
+	print "     SCPASSWORD=mypassword"
+	print "     export SCHOST SCUSERNAME SCPASSWORD"
+	print " "
+	print " Tenable.io example:"
+	print "     TIOHOST=cloud.tenable.com"
+	print "     TIOACCESSKEY=***********************************************************"
+	print "     TIOSECRETKEY=***********************************************************"
+	print "     export TIOHOST TIOACCESSKEY TIOSECRETKEY"
+	print " "
 	exit(-1)
 
 
 #Get commands
 if len(sys.argv) > 1:
-	noun=sys.argv[1]
+	try:
+		noun=sys.argv[1]
+	except:
+		DisplayHelp()
+		exit(0)
 	if DEBUG:
 		print "Noun:",noun
+else:
+	DisplayHelp()
+	exit(0)
 	
 if len(sys.argv) > 2:
-	verb=sys.argv[2]
+	try:
+		verb=sys.argv[2]
+	except:
+		DisplayHelp()
+		exit(0)
 	if DEBUG:
 		print "Verb:",verb
 else:
@@ -885,24 +934,13 @@ if USESC:
 
 if USETIO:
 	tioconn = TenableIOClient(access_key=accesskey, secret_key=secretkey)
-	
+
+
+
 while True:
 	if noun == "help":
 		if verb == "":
-			print "Options"
-			print "  scan launch"
-			print "  scan stop"
-			print "  scan stop-all"
-			print "  scan quick [plugin ID] [repository ID] [target] [target port]"
-			print "  scan pci-submit"
-			print "  scan pci-submit when-clean scan-id"
-			print "  pci-asv email-latest-attestation \"somebody@issuer.xyz\" \"securityanalyst@company.xyz\" \"Company Inc\" mailrelay.company.xyz"
-			print "  asset update"
-			print "  agent move"
-			print "  agent download"
-			print "  policy find-scans"
-			print "  scanzone overlaps"
-			print "  "
+			DisplayHelp()
 			exit(0)
 	if noun == "scan":
 		if verb == "launch":
